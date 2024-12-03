@@ -1,0 +1,105 @@
+import re
+
+# 메모장 파일 경로
+file_path = '3m.txt'
+
+# 파일 읽기
+with open(file_path, 'r', encoding='utf-8') as file:
+    content = file.read()
+
+# '/game/' 뒤에 오는 숫자 추출
+numbers = re.findall(r'/game/(\d+)', content)
+
+# 결과 출력
+print(numbers)
+!pip install requests beautifulsoup4
+!pip install selenium
+
+!apt-get update
+!apt-get install -y chromium-chromedriver
+!cp /usr/lib/chromium-browser/chromedriver /usr/bin
+!pip install selenium
+! pip install folium
+# Google Colab에서 Selenium을 사용하기 위한 설정
+!pip install selenium
+# ChromeDriver 설치
+!apt-get update
+!apt-get install -y chromium-chromedriver
+
+# ChromeDriver 경로 설정
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import Select
+from selenium.common.exceptions import NoSuchElementException
+import time
+from bs4 import BeautifulSoup
+import re
+
+chrome_options = webdriver.ChromeOptions()
+chrome_options.add_argument('--headless')  # 화면 표시하지 않음
+chrome_options.add_argument('--no-sandbox')
+chrome_options.add_argument('--disable-dev-shm-usage')
+chrome_options.add_argument('--disable-gpu')
+chrome_options.add_argument('--disable-extensions')
+chrome_options.add_argument('--disable-software-rasterizer')
+chrome_options.add_argument('--remote-debugging-port=9222')  # 디버깅 포트 설정
+chrome_options.add_argument('user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36')
+import pandas as pd
+from bs4 import BeautifulSoup
+import pandas as pd
+
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.common.by import By
+import time
+
+base_url = "https://sports.daum.net/game/{}/cast"
+
+result = []
+
+for num in numbers[:237]:
+  url = base_url.format(num)
+  
+  driver = webdriver.Chrome(options=chrome_options)
+  driver.get(url)
+
+  html_code = driver.page_source
+
+  soup = BeautifulSoup(html_code, 'html.parser')
+  #print(soup)
+  
+  for item in soup.find_all("div", class_="item_sms"):
+        # 1. 타자 정보
+        batter_info = item.find("em", class_="sms_word emph_word")
+        if batter_info:
+            result.append(batter_info.get_text().strip())
+        
+        # 2. 이벤트 기록 (1구, 2구 등)
+        events = item.find_all("em", class_="sms_word")
+        for event in events:
+            text = event.get_text().strip()
+            if text.startswith(("1구", "2구", "3구", "4구", "5구")):
+                result.append(text)
+
+        # 3. 결과 기록 (타자 기록 : 내용 형태)
+        outcomes = item.find_all("em", class_="sms_word")
+        for outcome in outcomes:
+            text = outcome.get_text().strip()
+            if ":" in text and not text.startswith(("1구", "2구", "3구", "4구", "5구")):
+                result.append(text)
+
+# 결과 출력
+for line in result:
+    print(line)
+
+# WebDriver 닫기
+driver.quit()
+
+df = pd.DataFrame(result)
+
+# 엑셀 파일로 저장
+df.to_excel("result.xlsx", index=False)
+
+print("Data saved to result.xlsx")
